@@ -262,17 +262,19 @@ main{max-width:980px;margin:0 auto;padding:16px}
 
 <script type="module">
 /* ====================== 設定（部署前修改這裡） ====================== */
-const APP_VERSION = "v1.0.1";   // 版號：每次更新都要改（與 git tag 一致）
+const APP_VERSION = "v1.1.0";   // 版號：每次更新都要改（與 git tag 一致）
 const APP_DATE = "2026-10-24";
 
 const CONFIG = {
   // Firebase 專案設定：Firebase Console → 專案設定 → 一般 → 你的應用程式 → SDK 設定
   // apiKey 留空 = 示範模式（資料存在瀏覽器）
   firebase: {
-    apiKey: "",
-    authDomain: "",
-    projectId: "",
-    appId: ""
+    apiKey: "AIzaSyCr7jwCwjFk4oVJ3Vq4tXrAHacpjDi451g",
+    authDomain: "study-tracker-46fae.firebaseapp.com",
+    projectId: "study-tracker-46fae",
+    storageBucket: "study-tracker-46fae.firebasestorage.app",
+    messagingSenderId: "209252728409",
+    appId: "1:209252728409:web:40431937a16dc03206fb48"
   },
   adminEmails: ["d8641343@gmail.com"],   // 管理者 Gmail（需和 firestore.rules 內一致）
   examDates: ["2027-05-15", "2027-05-16"], // 會考日期
