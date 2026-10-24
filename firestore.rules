@@ -1,0 +1,48 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ⚠️ 管理者 Gmail，需與 index.html 的 CONFIG.adminEmails 一致
+    function adminEmails() { return ['your-admin@gmail.com']; }
+
+    function signedIn() { return request.auth != null; }
+    function myDoc() { return /databases/$(database)/documents/users/$(request.auth.uid); }
+    function hasDoc() { return exists(myDoc()); }
+    function isAdmin() {
+      return signedIn() && (
+        request.auth.token.email in adminEmails() ||
+        (hasDoc() && get(myDoc()).data.role == 'admin' && get(myDoc()).data.status == 'approved')
+      );
+    }
+    function approved() { return signedIn() && hasDoc() && get(myDoc()).data.status == 'approved'; }
+
+    // 使用者資料：status = pending / approved / rejected，role = user / admin
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || approved() || isAdmin());
+      // 第一次登入只能建立「待核准」的一般帳號；名單內的管理者可直接建立
+      allow create: if signedIn() && request.auth.uid == uid && (
+        (request.resource.data.status == 'pending' && request.resource.data.role == 'user') ||
+        request.auth.token.email in adminEmails()
+      );
+      // 本人可改名、大頭貼、目標、計時狀態，但不能改自己的 status / role
+      allow update: if isAdmin() || (
+        request.auth.uid == uid &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'role', 'email'])
+      );
+      allow delete: if isAdmin();
+    }
+
+    // 讀書紀錄：核准的使用者可看全部（用於比較圖表），只能寫自己的
+    match /sessions/{id} {
+      allow read: if approved() || isAdmin();
+      allow create: if approved()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.sec is number
+        && request.resource.data.sec > 0
+        && request.resource.data.sec <= 43200;
+      allow update: if (approved() && resource.data.uid == request.auth.uid
+                        && request.resource.data.uid == request.auth.uid) || isAdmin();
+      allow delete: if (approved() && resource.data.uid == request.auth.uid) || isAdmin();
+    }
+  }
+}

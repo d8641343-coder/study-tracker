@@ -1,0 +1,944 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>會考讀書紀錄</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#f4f6fb;--card:#fff;--text:#1d2433;--muted:#6b7385;--line:#e3e7ef;
+  --primary:#2f6fed;--go:#16a34a;--go-d:#12813b;--stop:#e5484d;--stop-d:#c93a3f;
+  --warn-bg:#fff3e0;--warn:#b45309;--alert-bg:#fdecec;--alert:#c0262d;--ok-bg:#eaf7ef;--ok:#15803d;
+  --chip:#eef1f7;--shadow:0 1px 3px rgba(20,30,60,.06),0 4px 16px rgba(20,30,60,.05);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#11141b;--card:#1a1f2a;--text:#e7eaf1;--muted:#98a0b3;--line:#2b3242;
+    --chip:#252c3a;--warn-bg:#3a2a12;--warn:#f5b45b;--alert-bg:#3d1a1c;--alert:#ff8a8f;--ok-bg:#15301f;--ok:#6ee7a0;
+    --shadow:none;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;line-height:1.5}
+button{font:inherit;cursor:pointer;border:0;border-radius:10px}
+input,select,textarea{font:inherit;color:var(--text);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%}
+.hidden{display:none!important}
+.top{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 16px;background:var(--card);border-bottom:1px solid var(--line)}
+.brand{font-weight:700;font-size:18px;white-space:nowrap}
+.who{display:flex;align-items:center;gap:6px}
+.ghost{background:transparent;color:var(--muted);padding:8px 10px}
+.ghost:hover{background:var(--chip)}
+.meBtn{display:flex;align-items:center;gap:6px;background:var(--chip);color:var(--text);padding:4px 10px 4px 4px;border-radius:999px;max-width:150px}
+.meBtn span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.adminBtn{background:var(--chip);color:var(--text);padding:8px 10px;position:relative}
+.badge{position:absolute;top:-4px;right:-4px;background:var(--stop);color:#fff;font-size:11px;min-width:18px;height:18px;border-radius:9px;display:grid;place-items:center;padding:0 4px}
+.demobar{background:var(--warn-bg);color:var(--warn);font-size:13px;padding:6px 16px;text-align:center}
+main{max-width:980px;margin:0 auto;padding:16px}
+.card{background:var(--card);border-radius:16px;padding:16px;box-shadow:var(--shadow);border:1px solid var(--line);margin-bottom:14px}
+.card h2{font-size:16px;margin:0 0 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.av{border-radius:50%;object-fit:cover;flex:none;display:inline-grid;place-items:center;color:#fff;font-weight:700}
+/* countdown */
+.cd{display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(135deg,#2f6fed,#6a4cf0);color:#fff;border:0}
+.cdTitle{font-size:14px;opacity:.85}
+.cdDate{font-size:17px;font-weight:600}
+.cdWeeks{font-size:13px;opacity:.8}
+.cdNum{text-align:right;white-space:nowrap}
+.cdNum b{font-size:44px;line-height:1}
+.cdNum span{font-size:16px;margin-left:4px}
+/* cheer */
+.cheer{background:var(--card);border:1px solid var(--line);border-left:5px solid #f59e0b;border-radius:14px;padding:12px 16px;margin-bottom:14px;box-shadow:var(--shadow)}
+.cheerTop{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--muted)}
+.cheerTop .ghost{font-size:13px;padding:4px 8px}
+.cheerText{font-size:18px;font-weight:600;margin-top:2px}
+.cheerPop{text-align:center}
+.cheerPop .big{font-size:48px;line-height:1}
+.cheerPop p{font-size:20px;font-weight:600;margin:12px 0 4px}
+.cheerPop small{color:var(--muted)}
+/* reminder */
+.remind{border-radius:12px;padding:12px 14px;margin-bottom:14px;font-weight:500}
+.remind.alert{background:var(--alert-bg);color:var(--alert);font-size:17px;border:2px solid var(--alert)}
+.remind.warn{background:var(--warn-bg);color:var(--warn)}
+.remind.ok{background:var(--ok-bg);color:var(--ok)}
+/* timer */
+.timer{text-align:center}
+.timeDisp{font-size:clamp(52px,14vw,84px);font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:2px;line-height:1.1}
+.timerSub{color:var(--muted);margin:4px 0 12px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:10px}
+.chip{background:var(--chip);color:var(--text);padding:10px 18px;border-radius:999px;font-size:16px;border:2px solid transparent}
+.chip.on{color:#fff}
+.bigbtn{width:100%;font-size:26px;font-weight:700;padding:22px;margin-top:12px;border-radius:16px;color:#fff;transition:transform .05s}
+.bigbtn:active{transform:scale(.98)}
+.bigbtn.go{background:var(--go)}.bigbtn.go:hover{background:var(--go-d)}
+.bigbtn.stop{background:var(--stop)}.bigbtn.stop:hover{background:var(--stop-d)}
+.bigbtn:disabled{opacity:.6}
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;box-shadow:var(--shadow)}
+.stat small{color:var(--muted);display:block}
+.stat b{font-size:22px}
+.stat em{font-style:normal;color:var(--muted);font-size:13px}
+.bar{height:8px;background:var(--chip);border-radius:4px;overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;background:var(--go);border-radius:4px}
+@media (max-width:640px){.stats{grid-template-columns:repeat(2,1fr)}}
+/* leaderboard */
+.board{display:flex;flex-direction:column;gap:6px}
+.brow{display:flex;align-items:center;gap:10px;padding:6px 4px}
+.brow .rk{width:24px;text-align:center;font-weight:700;color:var(--muted)}
+.brow .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.brow .hb{flex:2;height:10px;background:var(--chip);border-radius:5px;overflow:hidden}
+.brow .hb i{display:block;height:100%;border-radius:5px}
+.brow b{min-width:70px;text-align:right}
+/* charts */
+.ctrl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ctrl select{width:auto;padding:6px 10px}
+.uchips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.uchip{display:flex;align-items:center;gap:6px;background:var(--chip);color:var(--muted);padding:3px 10px 3px 3px;border-radius:999px;border:2px solid transparent;font-size:14px;opacity:.55}
+.uchip.on{opacity:1;color:var(--text)}
+.cbox{position:relative;height:280px}
+.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:13px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:760px){.grid2{grid-template-columns:1fr}}
+/* records */
+.rec{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.rec:last-child{border-bottom:0}
+.tag{color:#fff;font-size:13px;padding:2px 10px;border-radius:999px;white-space:nowrap}
+.recMain{flex:1;min-width:0}
+.recMain div{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.recMain small{color:var(--muted)}
+.icon{background:transparent;color:var(--muted);padding:6px 8px;font-size:16px}
+.icon:hover{background:var(--chip)}
+.btn{background:var(--primary);color:#fff;padding:10px 16px;font-weight:600}
+.btn.sec{background:var(--chip);color:var(--text)}
+.btn.sm{padding:6px 12px;font-size:14px}
+.btn.red{background:var(--stop)}
+.btn.green{background:var(--go)}
+.empty{color:var(--muted);text-align:center;padding:16px}
+/* gate */
+.gate{text-align:center;padding:32px 16px}
+.gate h1{font-size:22px;margin:0 0 8px}
+.gate p{color:var(--muted)}
+.gbtn{display:inline-flex;align-items:center;gap:10px;background:var(--card);color:var(--text);border:1px solid var(--line);padding:16px 28px;font-size:18px;font-weight:600;border-radius:14px;box-shadow:var(--shadow);margin-top:12px}
+.demoLogin{max-width:320px;margin:12px auto 0;display:flex;gap:8px}
+/* modal */
+.mask{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:50;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal{background:var(--card);border-radius:16px;width:100%;max-width:480px;max-height:90vh;overflow:auto;padding:20px}
+.modal h3{margin:0 0 14px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:14px;color:var(--muted);margin-bottom:4px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mfoot{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+.avEdit{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.dropHint{font-size:13px;color:var(--muted)}
+.urow{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.urow .info{flex:1;min-width:140px}
+.urow .info small{color:var(--muted);display:block;word-break:break-all}
+.st{font-size:12px;padding:1px 8px;border-radius:999px;margin-left:4px}
+.st.pending{background:var(--warn-bg);color:var(--warn)}
+.st.approved{background:var(--ok-bg);color:var(--ok)}
+.st.rejected{background:var(--alert-bg);color:var(--alert)}
+.st.admin{background:var(--chip);color:var(--primary)}
+.uact{display:flex;gap:6px;flex-wrap:wrap}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1d2433;color:#fff;padding:10px 18px;border-radius:10px;z-index:60;font-size:15px;max-width:90vw}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">📚 會考讀書紀錄</div>
+  <div class="who hidden" id="who">
+    <button class="adminBtn hidden" id="adminBtn">管理<span id="pendBadge" class="badge hidden"></span></button>
+    <button class="meBtn" id="meBtn" title="個人設定"><span id="meAv"></span><span id="meName"></span></button>
+    <button class="ghost" id="logoutBtn">登出</button>
+  </div>
+</header>
+<div id="demoBar" class="demobar hidden">示範模式：資料只存在這台瀏覽器。填入 Firebase 設定後即為正式版（Google 登入）。</div>
+
+<main>
+  <section class="card cd" id="cd"></section>
+
+  <section id="vLoading" class="gate">載入中…</section>
+
+  <section id="vLogin" class="gate card hidden">
+    <h1>登入後開始記錄讀書時間</h1>
+    <p>使用 Google 帳號登入，首次登入需經管理者核准才能使用。</p>
+    <button class="gbtn" id="loginBtn">
+      <svg width="22" height="22" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>
+      使用 Google 帳號登入
+    </button>
+    <div class="demoLogin hidden" id="demoLogin">
+      <input id="demoName" placeholder="示範模式：輸入名字">
+      <button class="btn" id="demoGo">登入</button>
+    </div>
+    <p class="dropHint hidden" id="demoHint">示範：第一位登入者自動成為管理者；之後用其他名字登入會進入「待核准」。</p>
+  </section>
+
+  <section id="vPending" class="gate card hidden">
+    <div id="pendAv"></div>
+    <h1>等待管理者核准</h1>
+    <p id="pendText">帳號已建立，管理者核准後即可開始使用。</p>
+    <button class="btn" id="recheckBtn">重新檢查</button>
+  </section>
+
+  <section id="vApp" class="hidden">
+    <section class="cheer" id="cheer">
+      <div class="cheerTop"><span>💬 今日鼓勵</span><button class="ghost" id="cheerNext" title="換一句">換一句 ↻</button></div>
+      <div class="cheerText" id="cheerText"></div>
+    </section>
+    <div id="remind" class="remind"></div>
+
+    <section class="card timer">
+      <div class="timeDisp" id="timeDisp">00:00:00</div>
+      <div class="timerSub" id="timerSub"></div>
+      <div class="chips" id="subjChips"></div>
+      <input id="contentIn" maxlength="200" placeholder="看書內容（選填）例如：數學 第3章 習作 p.20–25">
+      <button class="bigbtn go" id="toggleBtn">▶ 開始讀書</button>
+    </section>
+
+    <div class="stats" id="stats"></div>
+
+    <section class="card">
+      <h2>🏆 近 7 天讀書排行</h2>
+      <div class="board" id="board"></div>
+    </section>
+
+    <section class="card">
+      <h2>📈 讀書趨勢
+        <span class="ctrl">
+          <select id="rangeSel">
+            <option value="7">近 7 天</option>
+            <option value="14" selected>近 14 天</option>
+            <option value="30">近 30 天</option>
+            <option value="60">近 60 天</option>
+            <option value="90">近 90 天</option>
+          </select>
+          <button class="btn sec sm" id="reloadBtn">↻ 更新</button>
+        </span>
+      </h2>
+      <div class="uchips" id="uchips"></div>
+      <h2 style="font-size:15px">每日讀書時數（小時）</h2>
+      <div class="cbox"><canvas id="c1"></canvas></div>
+    </section>
+
+    <section class="card">
+      <h2 style="font-size:15px">每日科目時數（小時）
+        <select id="subjMode" style="width:auto;padding:6px 10px"></select>
+      </h2>
+      <div class="cbox"><canvas id="c2"></canvas></div>
+      <div class="legend" id="lg2"></div>
+    </section>
+
+    <div class="grid2">
+      <section class="card">
+        <h2 style="font-size:15px">科目比例
+          <select id="pieUser" style="width:auto;padding:6px 10px"></select>
+        </h2>
+        <div class="cbox" style="height:240px"><canvas id="c3"></canvas></div>
+      </section>
+      <section class="card">
+        <h2 style="font-size:15px">各科累計（區間內）</h2>
+        <div id="subjTotals"></div>
+      </section>
+    </div>
+
+    <section class="card">
+      <h2>📝 我的讀書紀錄
+        <span class="ctrl">
+          <button class="btn sec sm" id="csvBtn">匯出 CSV</button>
+          <button class="btn sm" id="addBtn">＋ 補登</button>
+        </span>
+      </h2>
+      <div id="records"></div>
+    </section>
+  </section>
+</main>
+
+<div class="mask hidden" id="mask"><div class="modal" id="modal"></div></div>
+<div class="toast hidden" id="toast"></div>
+
+<script type="module">
+/* ====================== 設定（部署前修改這裡） ====================== */
+const CONFIG = {
+  // Firebase 專案設定：Firebase Console → 專案設定 → 一般 → 你的應用程式 → SDK 設定
+  // apiKey 留空 = 示範模式（資料存在瀏覽器）
+  firebase: {
+    apiKey: "",
+    authDomain: "",
+    projectId: "",
+    appId: ""
+  },
+  adminEmails: ["your-admin@gmail.com"],   // 管理者 Gmail（需和 firestore.rules 內一致）
+  examDates: ["2027-05-15", "2027-05-16"], // 會考日期
+  remindDays: 2,                           // 幾天沒讀書就提醒
+  defaultGoalMin: 120,                     // 預設每日目標（分鐘）
+  subjects: ["國文", "英文", "數學", "社會", "自然"],
+};
+/* ================================================================= */
+
+/* ---------- 每日鼓勵話語（可自行增修，每天依日期輪替） ---------- */
+const CHEERS = {
+  normal: [
+    "每天進步一點點，累積起來就是很大的差距。",
+    "今天多讀的一頁，就是會考那天多一分的把握。",
+    "不用一次讀很多，重要的是每天都有打開書。",
+    "先開始，就已經贏過還在猶豫的自己。",
+    "會寫的題目要穩穩拿分，不會的題目今天弄懂它。",
+    "專心 25 分鐘，比分心兩小時更有效。",
+    "錯題是最好的老師，把它們變成你的分數。",
+    "你現在流的汗，會變成五月的笑容。",
+    "累了就休息一下，但記得回來繼續。",
+    "今天的努力，明天的你會感謝。",
+    "別跟別人比，跟昨天的自己比就好。",
+    "一題一題來，一科一科顧，沒有讀不完的書。",
+    "複習比學新東西更重要，記得回頭看看。",
+    "把手機放遠一點，把夢想拉近一點。",
+    "不怕慢，只怕停。",
+    "每一個認真的晚上，都在幫你鋪路。",
+    "相信自己，你比想像中更有能力。",
+    "讀書不是為了考試而已，是為了更多的選擇。",
+    "今天也是能讓自己變更強的一天。",
+    "穩住節奏，好成績會跟上來的。",
+    "弱科多花一點時間，強科保持手感。",
+    "把今天該做的完成，就是最大的勝利。",
+    "堅持本身，就是一種了不起的能力。",
+    "遇到難題別灰心，想通的那一刻最有成就感。",
+    "早點開始讀，晚上就能早點休息。",
+    "會考是一場長跑，配速比衝刺更重要。",
+    "努力不一定馬上看到結果，但一定不會白費。",
+    "你正在成為更好的自己，繼續保持！",
+    "今天的目標：比昨天多專心一點。",
+    "睡飽、吃好、讀得進去，三樣都重要。",
+  ],
+  sprint: [   // 會考前 30 天內
+    "最後衝刺！每一天都很珍貴，把握住它。",
+    "現在是收網的時候，把錯題本再看一遍。",
+    "保持作息，讓身體習慣會考的時間。",
+    "不要再追新範圍了，把會的練到不會錯。",
+    "你已經準備這麼久了，相信自己的累積。",
+    "最後一段路，穩住心情，一步一步走完。",
+  ],
+  comeback: [ // 超過提醒天數沒讀書
+    "幾天沒讀沒關係，重要的是今天重新開始。",
+    "從一個小目標開始：先讀 20 分鐘就好。",
+    "回來就好！今天按下開始，就是好的一天。",
+  ],
+};
+
+const UNCAT = "未分類";
+const SUBJ_COLOR = { "國文":"#e5484d","英文":"#2f6fed","數學":"#f59e0b","社會":"#10b981","自然":"#8b5cf6",[UNCAT]:"#94a3b8" };
+const USER_COLORS = ["#2f6fed","#e5484d","#16a34a","#f59e0b","#8b5cf6","#0ea5e9","#db2777","#64748b","#a16207","#0d9488"];
+const ALL_SUBJ = [...CONFIG.subjects, UNCAT];
+const DAY = 86400000;
+const WD = "日一二三四五六";
+
+/* ---------- utils ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pad = n => String(n).padStart(2, "0");
+const dkey = ms => { const d = new Date(ms); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; };
+const dayStart = ms => { const d = new Date(ms); d.setHours(0,0,0,0); return d.getTime(); };
+const dayDiff = (a, b) => Math.round((dayStart(a) - dayStart(b)) / DAY);
+const parseD = s => { const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); };
+const fmtHMS = sec => { sec = Math.max(0, Math.floor(sec)); return `${pad(Math.floor(sec/3600))}:${pad(Math.floor(sec%3600/60))}:${pad(sec%60)}`; };
+const fmtDur = sec => { const m = Math.round(sec/60); if (m < 60) return `${m} 分`; return `${Math.floor(m/60)} 小時${m%60 ? ` ${m%60} 分` : ""}`; };
+const hrs = sec => Math.round(sec / 36) / 100;
+const subjOf = s => ALL_SUBJ.includes(s.subject) ? s.subject : UNCAT;
+const md = ms => { const d = new Date(ms); return `${d.getMonth()+1}/${d.getDate()}（${WD[d.getDay()]}）`; };
+const hm = ms => { const d = new Date(ms); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+
+function toast(msg, ms = 2200) {
+  const t = $("#toast"); t.textContent = msg; t.classList.remove("hidden");
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.add("hidden"), ms);
+}
+function errMsg(e) {
+  console.error(e);
+  const c = e?.code || "";
+  if (c.includes("permission-denied")) return "權限不足（帳號可能尚未核准或已被停用）";
+  if (c.includes("popup")) return "登入視窗被關閉或封鎖，請允許彈出視窗後再試";
+  if (c.includes("unauthorized-domain")) return "此網域未加入 Firebase 授權網域";
+  return "發生錯誤：" + (e?.message || e);
+}
+
+/* ---------- modal ---------- */
+function openModal(html) { $("#modal").innerHTML = html; $("#mask").classList.remove("hidden"); }
+function closeModal() { $("#mask").classList.add("hidden"); $("#modal").innerHTML = ""; }
+$("#mask").addEventListener("click", e => { if (e.target.id === "mask") closeModal(); });
+function ask(msg, okText = "確定", danger = false) {
+  return new Promise(res => {
+    openModal(`<h3>${esc(msg)}</h3><div class="mfoot">
+      <button class="btn sec" id="askNo">取消</button>
+      <button class="btn ${danger ? "red" : ""}" id="askOk">${esc(okText)}</button></div>`);
+    $("#askNo").onclick = () => { closeModal(); res(false); };
+    $("#askOk").onclick = () => { closeModal(); res(true); };
+  });
+}
+
+/* ---------- avatar ---------- */
+let colorMap = {};
+const uc = u => colorMap[u?.id] || USER_COLORS[0];
+function avatar(u, size = 32) {
+  if (u?.photo) return `<img class="av" src="${esc(u.photo)}" referrerpolicy="no-referrer" alt="" style="width:${size}px;height:${size}px">`;
+  return `<span class="av" style="width:${size}px;height:${size}px;font-size:${Math.round(size*.45)}px;background:${uc(u)}">${esc((u?.name || "?").slice(0,1))}</span>`;
+}
+function resizeImage(file, size = 160) {
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement("canvas"); c.width = c.height = size;
+      const s = Math.min(img.width, img.height);
+      c.getContext("2d").drawImage(img, (img.width - s)/2, (img.height - s)/2, s, s, 0, 0, size, size);
+      URL.revokeObjectURL(img.src); res(c.toDataURL("image/jpeg", 0.85));
+    };
+    img.onerror = rej; img.src = URL.createObjectURL(file);
+  });
+}
+
+/* ====================== 後端：Firebase ====================== */
+async function makeFirebase(cfg) {
+  const V = "10.12.2", B = `https://www.gstatic.com/firebasejs/${V}/`;
+  const [{ initializeApp }, A, F] = await Promise.all([
+    import(B + "firebase-app.js"), import(B + "firebase-auth.js"), import(B + "firebase-firestore.js")]);
+  const app = initializeApp(cfg), auth = A.getAuth(app), db = F.getFirestore(app);
+  const { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs, addDoc, query, where } = F;
+  const toU = u => u ? { uid: u.uid, email: u.email, name: u.displayName, photo: u.photoURL } : null;
+  return {
+    mode: "firebase",
+    onAuth: cb => A.onAuthStateChanged(auth, u => cb(toU(u))),
+    signIn: () => A.signInWithPopup(auth, new A.GoogleAuthProvider()),
+    signOut: () => A.signOut(auth),
+    async getUser(uid) { const s = await getDoc(doc(db, "users", uid)); return s.exists() ? { id: uid, ...s.data() } : null; },
+    createUser: (uid, d) => setDoc(doc(db, "users", uid), d),
+    updateUser: (uid, p) => updateDoc(doc(db, "users", uid), p),
+    deleteUser: uid => deleteDoc(doc(db, "users", uid)),
+    async listUsers() { const s = await getDocs(collection(db, "users")); return s.docs.map(d => ({ id: d.id, ...d.data() })); },
+    async listSessions(since) {
+      const s = await getDocs(query(collection(db, "sessions"), where("start", ">=", since)));
+      return s.docs.map(d => ({ id: d.id, ...d.data() }));
+    },
+    async addSession(d) { return (await addDoc(collection(db, "sessions"), d)).id; },
+    updateSession: (id, p) => updateDoc(doc(db, "sessions", id), p),
+    deleteSession: id => deleteDoc(doc(db, "sessions", id)),
+  };
+}
+
+/* ====================== 後端：示範模式（localStorage） ====================== */
+function makeDemo() {
+  const K = "study_tracker_demo_v1";
+  let st = null;
+  try { st = JSON.parse(localStorage.getItem(K)); } catch (e) {}
+  if (!st) st = seedDemo();
+  const save = () => { try { localStorage.setItem(K, JSON.stringify(st)); } catch (e) {} };
+  const cl = o => JSON.parse(JSON.stringify(o));
+  let cb = () => {};
+  return {
+    mode: "demo",
+    onAuth(f) { cb = f; setTimeout(() => f(st.current), 0); },
+    async signIn(name) {
+      name = (name || "").trim(); if (!name) return;
+      st.current = { uid: "demo_" + name, email: name + "@demo.local", name, photo: "" }; save(); cb(st.current);
+    },
+    async signOut() { st.current = null; save(); cb(null); },
+    async getUser(uid) { const u = st.users[uid]; return u ? { id: uid, ...cl(u) } : null; },
+    async createUser(uid, d) {
+      if (!Object.values(st.users).some(u => u.role === "admin")) d = { ...d, role: "admin", status: "approved" };
+      st.users[uid] = cl(d); save();
+    },
+    async updateUser(uid, p) { Object.assign(st.users[uid], cl(p)); save(); },
+    async deleteUser(uid) { delete st.users[uid]; save(); },
+    async listUsers() { return Object.entries(st.users).map(([id, u]) => ({ id, ...cl(u) })); },
+    async listSessions(since) { return Object.entries(st.sessions).filter(([, s]) => s.start >= since).map(([id, s]) => ({ id, ...s })); },
+    async addSession(d) { const id = "s" + (st.seq++); st.sessions[id] = cl(d); save(); return id; },
+    async updateSession(id, p) { Object.assign(st.sessions[id], p); save(); },
+    async deleteSession(id) { delete st.sessions[id]; save(); },
+  };
+}
+function seedDemo() {
+  const now = Date.now(), st = { current: null, users: {}, sessions: {}, seq: 1 };
+  const base = { photo: "", role: "user", goalMin: 120, active: null };
+  st.users.demo_mate = { ...base, name: "示範同學", email: "mate@demo.local", status: "approved", createdAt: now - 40*DAY, lastStudyEnd: 0 };
+  st.users.demo_new  = { ...base, name: "新來的同學", email: "new@demo.local", status: "pending", createdAt: now - DAY, lastStudyEnd: 0 };
+  let last = 0;
+  for (let i = 30; i >= 1; i--) {
+    const day = dayStart(now - i*DAY), n = [0,1,1,2,2,3][Math.floor(Math.random()*6)];
+    let t = day + (18.5 + Math.random()) * 3600000;
+    for (let k = 0; k < n; k++) {
+      const sec = Math.round((20 + Math.random()*60) * 60);
+      const subject = Math.random() < .1 ? "" : CONFIG.subjects[Math.floor(Math.random()*5)];
+      st.sessions["s" + st.seq++] = { uid: "demo_mate", subject, content: subject ? `${subject} 複習` : "", start: t, end: t + sec*1000, sec };
+      last = t + sec*1000; t += sec*1000 + 15*60000;
+    }
+  }
+  st.users.demo_mate.lastStudyEnd = last;
+  return st;
+}
+
+/* ====================== 狀態 ====================== */
+let backend, me = null, users = [], sessions = [];
+let selSubject = "", busy = false, tickTimer = null, lastLoad = 0;
+let range = 14, shown = new Set(), subjMode = "stack", pieUid = null, recLimit = 20;
+const charts = {};
+
+function show(view) {
+  for (const v of ["vLoading", "vLogin", "vPending", "vApp"]) $("#" + v).classList.toggle("hidden", v !== view);
+  $("#who").classList.toggle("hidden", !(me && view !== "vLogin"));
+}
+
+/* ====================== 倒數 ====================== */
+function renderCountdown() {
+  const [d1, d2] = CONFIG.examDates.map(parseD), now = Date.now(), n = dayDiff(d1, now);
+  const label = `${d1.getFullYear()} 年 ${d1.getMonth()+1}/${d1.getDate()}（${WD[d1.getDay()]}）、${d2.getMonth()+1}/${d2.getDate()}（${WD[d2.getDay()]}）`;
+  let big, unit, extra = "";
+  if (n > 0) { big = n; unit = "天"; extra = `約 ${Math.floor(n/7)} 週又 ${n%7} 天`; }
+  else if (dayDiff(d2, now) >= 0) { big = "今天"; unit = ""; extra = "會考加油！"; }
+  else { big = "—"; unit = ""; extra = "本屆會考已結束"; }
+  $("#cd").innerHTML = `<div><div class="cdTitle">國中教育會考</div><div class="cdDate">${label}</div><div class="cdWeeks">${extra}</div></div>
+    <div class="cdNum"><div class="cdTitle">倒數</div><b>${big}</b><span>${unit}</span></div>`;
+}
+
+/* ====================== 登入流程 ====================== */
+async function handleAuth(au) {
+  if (!au) { me = null; stopTick(); show("vLogin"); return; }
+  show("vLoading");
+  try {
+    let u = await backend.getUser(au.uid);
+    if (!u) {
+      const isAdmin = CONFIG.adminEmails.map(s => s.toLowerCase()).includes((au.email || "").toLowerCase());
+      await backend.createUser(au.uid, {
+        name: au.name || au.email, email: au.email || "", photo: au.photo || "",
+        status: isAdmin ? "approved" : "pending", role: isAdmin ? "admin" : "user",
+        createdAt: Date.now(), goalMin: CONFIG.defaultGoalMin, lastStudyEnd: 0, active: null,
+      });
+      u = await backend.getUser(au.uid);
+    }
+    me = u; renderHeader();
+    if (u.status === "approved") { await loadData(); show("vApp"); renderAll(); startTick(); showDailyCheer(); }
+    else {
+      $("#pendAv").innerHTML = avatar(u, 64);
+      $("#pendText").textContent = u.status === "rejected"
+        ? "此帳號未獲核准，如有疑問請洽管理者。"
+        : `${u.name}（${u.email}）的帳號已建立，管理者核准後即可開始使用。`;
+      show("vPending");
+    }
+  } catch (e) { toast(errMsg(e), 4000); show("vLogin"); }
+}
+
+async function loadData() {
+  const since = dayStart(Date.now()) - 90*DAY;
+  [users, sessions] = await Promise.all([backend.listUsers(), backend.listSessions(since)]);
+  users.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+  colorMap = {}; users.forEach((u, i) => colorMap[u.id] = USER_COLORS[i % USER_COLORS.length]);
+  me = users.find(u => u.id === me.id) || me;
+  const appr = approved();
+  if (!shown.size) appr.forEach(u => shown.add(u.id));
+  for (const id of [...shown]) if (!appr.some(u => u.id === id)) shown.delete(id);
+  if (!pieUid || !appr.some(u => u.id === pieUid)) pieUid = me.id;
+  lastLoad = Date.now();
+}
+const approved = () => users.filter(u => u.status === "approved");
+const mine = () => sessions.filter(s => s.uid === me.id);
+
+function renderHeader() {
+  $("#meAv").innerHTML = avatar(me, 28);
+  $("#meName").textContent = me.name;
+  $("#adminBtn").classList.toggle("hidden", me.role !== "admin");
+  const p = users.filter(u => u.status === "pending").length;
+  $("#pendBadge").textContent = p; $("#pendBadge").classList.toggle("hidden", !p);
+}
+
+function renderAll() {
+  renderHeader(); renderCheer(); renderReminder(); renderChips(); renderTimer(); renderStats();
+  renderBoard(); renderCharts(); renderRecords();
+}
+
+/* ====================== 提醒 ====================== */
+function renderReminder() {
+  const el = $("#remind");
+  if (me.active) { el.className = "remind ok"; el.textContent = "📖 讀書中，專心加油！"; return; }
+  const last = Math.max(0, ...mine().map(s => s.end)) || me.lastStudyEnd || 0;
+  if (!last) { el.className = "remind warn"; el.textContent = "還沒有任何讀書紀錄，按下「開始讀書」吧！"; return; }
+  const d = dayDiff(Date.now(), last), left = dayDiff(parseD(CONFIG.examDates[0]), Date.now());
+  if (d >= CONFIG.remindDays) {
+    el.className = "remind alert";
+    el.innerHTML = `⚠️ 已經 <b>${d}</b> 天沒看書了！${left > 0 ? `距離會考只剩 ${left} 天，` : ""}今天就開始吧！`;
+  } else {
+    el.className = "remind ok";
+    el.textContent = d === 0 ? `✅ 今天已經讀過書了（上次結束 ${hm(last)}），很棒！` : "上次讀書是昨天，今天也繼續加油！";
+  }
+}
+
+/* ====================== 每日鼓勵 ====================== */
+let cheerOffset = 0;
+function cheerPool() {
+  const left = dayDiff(parseD(CONFIG.examDates[0]), Date.now());
+  const last = Math.max(0, ...mine().map(s => s.end)) || me.lastStudyEnd || 0;
+  if (last && !me.active && dayDiff(Date.now(), last) >= CONFIG.remindDays) return CHEERS.comeback;
+  if (left > 0 && left <= 30) return CHEERS.sprint;
+  return CHEERS.normal;
+}
+function todayCheer(offset = 0) {
+  const pool = cheerPool(), dayNum = Math.floor(dayStart(Date.now()) / DAY + 1);
+  return pool[(dayNum * 7 + offset) % pool.length];
+}
+function renderCheer() { $("#cheerText").textContent = todayCheer(cheerOffset); }
+$("#cheerNext").addEventListener("click", () => { cheerOffset++; renderCheer(); });
+function showDailyCheer() {
+  const k = `cheer_${me.id}_${dkey(Date.now())}`;
+  try { if (localStorage.getItem(k)) return; localStorage.setItem(k, "1"); } catch (e) {}
+  const left = dayDiff(parseD(CONFIG.examDates[0]), Date.now());
+  const h = new Date().getHours(), hi = h < 11 ? "早安" : h < 18 ? "午安" : "晚安";
+  openModal(`<div class="cheerPop"><div class="big">🌟</div>
+    <p>${esc(todayCheer())}</p>
+    <small>${hi}，${esc(me.name)}！${left > 0 ? `距離會考還有 ${left} 天` : ""}</small>
+    <div class="mfoot" style="justify-content:center"><button class="btn green" id="cheerGo">開始今天的讀書 💪</button></div></div>`);
+  $("#cheerGo").onclick = closeModal;
+}
+
+/* ====================== 計時器 ====================== */
+function renderChips() {
+  $("#subjChips").innerHTML = CONFIG.subjects.map(s =>
+    `<button class="chip ${selSubject === s ? "on" : ""}" data-s="${esc(s)}" style="${selSubject === s ? `background:${SUBJ_COLOR[s]};border-color:${SUBJ_COLOR[s]}` : ""}">${esc(s)}</button>`).join("");
+}
+$("#subjChips").addEventListener("click", e => {
+  const b = e.target.closest(".chip"); if (!b) return;
+  selSubject = selSubject === b.dataset.s ? "" : b.dataset.s;
+  renderChips(); syncActive();
+});
+$("#contentIn").addEventListener("input", () => { clearTimeout(syncActive._t); syncActive._t = setTimeout(syncActive, 800); });
+async function syncActive() {
+  if (!me?.active) return;
+  me.active.subject = selSubject; me.active.content = $("#contentIn").value.trim();
+  try { await backend.updateUser(me.id, { active: me.active }); } catch (e) {}
+}
+
+function renderTimer() {
+  const a = me.active, btn = $("#toggleBtn");
+  const todayN = mine().filter(s => dkey(s.start) === dkey(Date.now())).length;
+  if (a) {
+    $("#timeDisp").textContent = fmtHMS((Date.now() - a.start) / 1000);
+    $("#timerSub").textContent = `今天第 ${todayN + 1} 次・${hm(a.start)} 開始`;
+    btn.className = "bigbtn stop"; btn.textContent = "■ 結束";
+    document.title = "⏱ " + fmtHMS((Date.now() - a.start) / 1000) + "｜會考讀書紀錄";
+  } else {
+    $("#timeDisp").textContent = "00:00:00";
+    $("#timerSub").textContent = todayN ? `今天已讀 ${todayN} 次，再來一次吧` : "選科目、填內容都是選填，直接按開始也可以";
+    btn.className = "bigbtn go"; btn.textContent = "▶ 開始讀書";
+    document.title = "會考讀書紀錄";
+  }
+}
+function startTick() { stopTick(); tickTimer = setInterval(() => { if (me?.active) renderTimer(); }, 1000); }
+function stopTick() { clearInterval(tickTimer); }
+
+$("#toggleBtn").addEventListener("click", async () => {
+  if (busy) return; busy = true; $("#toggleBtn").disabled = true;
+  try {
+    if (!me.active) {
+      me.active = { start: Date.now(), subject: selSubject, content: $("#contentIn").value.trim() };
+      renderTimer(); renderReminder();
+      await backend.updateUser(me.id, { active: me.active });
+      toast("開始計時 ⏱");
+    } else {
+      const a = me.active, end = Date.now(), sec = Math.round((end - a.start) / 1000);
+      if (sec > 4*3600 && !(await ask(`這次計時已 ${fmtDur(sec)}，確定要結束並記錄嗎？（之後可再編輯時間）`, "結束並記錄"))) return;
+      if (sec < 10) {
+        me.active = null; await backend.updateUser(me.id, { active: null });
+        toast("不到 10 秒，未記錄"); return resetInputs();
+      }
+      const s = { uid: me.id, subject: selSubject, content: $("#contentIn").value.trim(), start: a.start, end, sec };
+      const id = await backend.addSession(s);
+      sessions.push({ id, ...s });
+      me.active = null; me.lastStudyEnd = end;
+      await backend.updateUser(me.id, { active: null, lastStudyEnd: end });
+      resetInputs(); toast(`已記錄 ${fmtDur(sec)} 👍`);
+    }
+  } catch (e) { toast(errMsg(e), 4000); }
+  finally { busy = false; $("#toggleBtn").disabled = false; }
+});
+function resetInputs() { selSubject = ""; $("#contentIn").value = ""; renderAll(); }
+
+/* ====================== 統計卡片 ====================== */
+function streakOf(uid) {
+  const days = new Set(sessions.filter(s => s.uid === uid).map(s => dkey(s.start)));
+  let d = new Date(dayStart(Date.now())); if (!days.has(dkey(d))) d.setDate(d.getDate() - 1);
+  let n = 0; while (days.has(dkey(d))) { n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
+function renderStats() {
+  const m = mine(), tk = dkey(Date.now());
+  const today = m.filter(s => dkey(s.start) === tk), tSec = today.reduce((a, s) => a + s.sec, 0);
+  const goal = me.goalMin || CONFIG.defaultGoalMin, pct = Math.min(100, Math.round(tSec / 60 / goal * 100));
+  const wk = new Date(dayStart(Date.now())); wk.setDate(wk.getDate() - ((wk.getDay() + 6) % 7));
+  const wSec = m.filter(s => s.start >= wk.getTime()).reduce((a, s) => a + s.sec, 0);
+  $("#stats").innerHTML = `
+    <div class="stat"><small>今天</small><b>${fmtDur(tSec)}</b><em>　${today.length} 次</em></div>
+    <div class="stat"><small>今日目標 ${goal} 分</small><b>${pct}%</b><div class="bar"><i style="width:${pct}%"></i></div></div>
+    <div class="stat"><small>連續讀書</small><b>${streakOf(me.id)}</b><em> 天</em></div>
+    <div class="stat"><small>本週（一至今）</small><b>${fmtDur(wSec)}</b></div>`;
+}
+
+/* ====================== 排行 ====================== */
+function renderBoard() {
+  const since = dayStart(Date.now()) - 6*DAY;
+  const rows = approved().map(u => {
+    const ss = sessions.filter(s => s.uid === u.id && s.start >= since);
+    return { u, sec: ss.reduce((a, s) => a + s.sec, 0), n: ss.length };
+  }).sort((a, b) => b.sec - a.sec);
+  const max = Math.max(1, ...rows.map(r => r.sec));
+  $("#board").innerHTML = rows.map((r, i) => `<div class="brow">
+      <span class="rk">${["🥇","🥈","🥉"][i] || i + 1}</span>${avatar(r.u, 30)}
+      <span class="nm">${esc(r.u.name)}${r.u.id === me.id ? "（我）" : ""}${r.u.active ? " 📖" : ""}</span>
+      <span class="hb"><i style="width:${r.sec / max * 100}%;background:${uc(r.u)}"></i></span>
+      <b>${fmtDur(r.sec)}</b></div>`).join("") || `<div class="empty">尚無資料</div>`;
+}
+
+/* ====================== 圖表 ====================== */
+function rangeDays() {
+  const out = [], t = new Date(dayStart(Date.now()));
+  for (let i = range - 1; i >= 0; i--) { const d = new Date(t); d.setDate(d.getDate() - i); out.push(dkey(d)); }
+  return out;
+}
+function aggregate(days) {
+  const set = new Set(days), agg = {};
+  for (const s of sessions) {
+    const k = dkey(s.start); if (!set.has(k)) continue;
+    const cell = (agg[s.uid] ??= {})[k] ??= {}, sj = subjOf(s);
+    cell[sj] = (cell[sj] || 0) + s.sec;
+  }
+  const get = (uid, d, subj) => { const x = agg[uid]?.[d]; if (!x) return 0; return subj ? (x[subj] || 0) : Object.values(x).reduce((a, b) => a + b, 0); };
+  return get;
+}
+function cssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+function mkChart(id, cfg) { charts[id]?.destroy(); charts[id] = new Chart($("#" + id), cfg); }
+
+function renderCharts() {
+  if (typeof Chart === "undefined") return;
+  Chart.defaults.color = cssVar("--muted"); Chart.defaults.borderColor = cssVar("--line");
+  Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+  const appr = approved(), su = appr.filter(u => shown.has(u.id));
+  $("#uchips").innerHTML = appr.map(u => `<button class="uchip ${shown.has(u.id) ? "on" : ""}" data-u="${u.id}" style="${shown.has(u.id) ? `border-color:${uc(u)}` : ""}">${avatar(u, 24)}${esc(u.name)}</button>`).join("");
+  const days = rangeDays(), labels = days.map(d => { const [, m, dd] = d.split("-"); return `${+m}/${+dd}`; });
+  const get = aggregate(days);
+  const tip = { callbacks: { label: c => `${c.dataset.label}：${c.parsed.y} 小時` } };
+
+  // 1. 每日總時數（每人一條線）
+  mkChart("c1", { type: "line",
+    data: { labels, datasets: su.map(u => ({ label: u.name, data: days.map(d => hrs(get(u.id, d))), borderColor: uc(u), backgroundColor: uc(u) + "22", fill: su.length === 1, tension: .3, pointRadius: range > 30 ? 0 : 3, borderWidth: 2 })) },
+    options: { maintainAspectRatio: false, interaction: { mode: "index", intersect: false }, plugins: { tooltip: tip, legend: { display: su.length > 1 } }, scales: { y: { beginAtZero: true } } } });
+
+  // 2. 科目
+  const sm = $("#subjMode");
+  sm.innerHTML = `<option value="stack">全部科目（每人一柱堆疊）</option>` + ALL_SUBJ.map(s => `<option value="${esc(s)}">${esc(s)}（每人一條線）</option>`).join("");
+  sm.value = subjMode;
+  if (subjMode === "stack") {
+    const ds = [];
+    su.forEach(u => ALL_SUBJ.forEach(s => ds.push({ label: `${u.name}・${s}`, data: days.map(d => hrs(get(u.id, d, s))), backgroundColor: SUBJ_COLOR[s], stack: u.id, borderRadius: 2 })));
+    mkChart("c2", { type: "bar", data: { labels, datasets: ds },
+      options: { maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { ...tip, filter: c => c.parsed.y > 0 } }, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } } });
+    $("#lg2").innerHTML = ALL_SUBJ.map(s => `<span><i style="background:${SUBJ_COLOR[s]}"></i>${esc(s)}</span>`).join("")
+      + (su.length > 1 ? `<span style="flex-basis:100%">每天由左到右：${su.map(u => esc(u.name)).join("、")}</span>` : "");
+  } else {
+    mkChart("c2", { type: "line",
+      data: { labels, datasets: su.map(u => ({ label: u.name, data: days.map(d => hrs(get(u.id, d, subjMode))), borderColor: uc(u), backgroundColor: uc(u), tension: .3, pointRadius: range > 30 ? 0 : 3, borderWidth: 2 })) },
+      options: { maintainAspectRatio: false, interaction: { mode: "index", intersect: false }, plugins: { tooltip: tip }, scales: { y: { beginAtZero: true } } } });
+    $("#lg2").innerHTML = `<span><i style="background:${SUBJ_COLOR[subjMode]}"></i>${esc(subjMode)}：每位同學一條線</span>`;
+  }
+
+  // 3. 科目比例 + 各科累計
+  const pu = $("#pieUser");
+  pu.innerHTML = appr.map(u => `<option value="${u.id}">${esc(u.name)}</option>`).join(""); pu.value = pieUid;
+  const tot = ALL_SUBJ.map(s => days.reduce((a, d) => a + get(pieUid, d, s), 0));
+  mkChart("c3", { type: "doughnut",
+    data: { labels: ALL_SUBJ, datasets: [{ data: tot.map(hrs), backgroundColor: ALL_SUBJ.map(s => SUBJ_COLOR[s]), borderWidth: 0 }] },
+    options: { maintainAspectRatio: false, plugins: { legend: { position: "right" }, tooltip: { callbacks: { label: c => `${c.label}：${c.parsed} 小時` } } } } });
+  const max = Math.max(1, ...tot), name = appr.find(u => u.id === pieUid)?.name || "";
+  $("#subjTotals").innerHTML = `<div class="dropHint" style="margin-bottom:6px">${esc(name)}・近 ${range} 天</div>` + ALL_SUBJ.map((s, i) => `<div class="brow">
+      <span class="tag" style="background:${SUBJ_COLOR[s]};min-width:56px;text-align:center">${esc(s)}</span>
+      <span class="hb"><i style="width:${tot[i] / max * 100}%;background:${SUBJ_COLOR[s]}"></i></span><b>${fmtDur(tot[i])}</b></div>`).join("");
+}
+$("#uchips").addEventListener("click", e => {
+  const b = e.target.closest(".uchip"); if (!b) return;
+  const id = b.dataset.u;
+  if (shown.has(id)) { if (shown.size > 1) shown.delete(id); } else shown.add(id);
+  renderCharts();
+});
+$("#rangeSel").addEventListener("change", e => { range = +e.target.value; renderCharts(); });
+$("#subjMode").addEventListener("change", e => { subjMode = e.target.value; renderCharts(); });
+$("#pieUser").addEventListener("change", e => { pieUid = e.target.value; renderCharts(); });
+$("#reloadBtn").addEventListener("click", refresh);
+async function refresh() {
+  try { await loadData(); renderAll(); toast("已更新"); } catch (e) { toast(errMsg(e), 4000); }
+}
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && me?.status === "approved" && Date.now() - lastLoad > 60000)
+    loadData().then(renderAll).catch(() => {});
+});
+
+/* ====================== 我的紀錄 ====================== */
+function renderRecords() {
+  const list = mine().sort((a, b) => b.start - a.start);
+  $("#records").innerHTML = list.slice(0, recLimit).map(s => `<div class="rec">
+      <span class="tag" style="background:${SUBJ_COLOR[subjOf(s)]}">${esc(subjOf(s))}</span>
+      <div class="recMain"><div>${s.content ? esc(s.content) : `<span style="color:var(--muted)">（未填內容）</span>`}</div>
+        <small>${md(s.start)} ${hm(s.start)}–${hm(s.end)}</small></div>
+      <b style="white-space:nowrap">${fmtDur(s.sec)}</b>
+      <button class="icon" data-edit="${s.id}" title="編輯">✎</button>
+      <button class="icon" data-del="${s.id}" title="刪除">🗑</button></div>`).join("")
+    || `<div class="empty">還沒有紀錄（顯示近 90 天）</div>`;
+  if (list.length > recLimit) $("#records").insertAdjacentHTML("beforeend", `<div style="text-align:center;margin-top:8px"><button class="btn sec sm" id="moreBtn">顯示更多（共 ${list.length} 筆）</button></div>`);
+}
+$("#records").addEventListener("click", async e => {
+  if (e.target.id === "moreBtn") { recLimit += 30; return renderRecords(); }
+  const ed = e.target.closest("[data-edit]"), dl = e.target.closest("[data-del]");
+  if (ed) editSession(sessions.find(s => s.id === ed.dataset.edit));
+  if (dl) {
+    const s = sessions.find(x => x.id === dl.dataset.del);
+    if (!(await ask(`刪除 ${md(s.start)} ${hm(s.start)} 的紀錄（${fmtDur(s.sec)}）？`, "刪除", true))) return;
+    try { await backend.deleteSession(s.id); sessions = sessions.filter(x => x.id !== s.id); renderAll(); toast("已刪除"); }
+    catch (err) { toast(errMsg(err), 4000); }
+  }
+});
+$("#addBtn").addEventListener("click", () => editSession(null));
+
+function editSession(s) {
+  const st = s ? s.start : Date.now() - 3600000, d = new Date(st);
+  openModal(`<h3>${s ? "編輯紀錄" : "補登紀錄"}</h3>
+    <div class="row2">
+      <div class="field"><label>日期</label><input type="date" id="eDate" value="${dkey(st)}" max="${dkey(Date.now())}"></div>
+      <div class="field"><label>開始時間</label><input type="time" id="eTime" value="${pad(d.getHours())}:${pad(d.getMinutes())}"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>時長（分鐘）</label><input type="number" id="eMin" min="1" max="720" value="${s ? Math.max(1, Math.round(s.sec/60)) : 60}"></div>
+      <div class="field"><label>科目</label><select id="eSubj"><option value="">${UNCAT}</option>${CONFIG.subjects.map(x => `<option ${s?.subject === x ? "selected" : ""}>${esc(x)}</option>`).join("")}</select></div>
+    </div>
+    <div class="field"><label>看書內容</label><input id="eContent" maxlength="200" value="${esc(s?.content || "")}"></div>
+    <div class="mfoot"><button class="btn sec" id="eCancel">取消</button><button class="btn" id="eSave">儲存</button></div>`);
+  $("#eCancel").onclick = closeModal;
+  $("#eSave").onclick = async () => {
+    const [y, m, dd] = $("#eDate").value.split("-").map(Number), [hh, mi] = $("#eTime").value.split(":").map(Number);
+    const min = +$("#eMin").value;
+    if (!y || isNaN(hh) || !(min >= 1 && min <= 720)) return toast("請確認日期、時間與時長（1–720 分）");
+    const start = new Date(y, m - 1, dd, hh, mi).getTime(), sec = Math.round(min * 60), end = start + sec*1000;
+    if (end > Date.now() + 60000) return toast("結束時間不能晚於現在");
+    const data = { subject: $("#eSubj").value, content: $("#eContent").value.trim(), start, end, sec };
+    try {
+      if (s) { await backend.updateSession(s.id, data); Object.assign(s, data); }
+      else { const full = { uid: me.id, ...data }; const id = await backend.addSession(full); sessions.push({ id, ...full }); }
+      if (end > (me.lastStudyEnd || 0)) { me.lastStudyEnd = end; backend.updateUser(me.id, { lastStudyEnd: end }).catch(() => {}); }
+      closeModal(); renderAll(); toast("已儲存");
+    } catch (e) { toast(errMsg(e), 4000); }
+  };
+}
+
+$("#csvBtn").addEventListener("click", () => {
+  const rows = [["日期", "開始", "結束", "分鐘", "科目", "內容"]].concat(
+    mine().sort((a, b) => a.start - b.start).map(s => [dkey(s.start), hm(s.start), hm(s.end), Math.round(s.sec/60), subjOf(s), s.content || ""]));
+  const csv = "\ufeff" + rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+  a.download = `讀書紀錄_${me.name}_${dkey(Date.now())}.csv`; a.click();
+});
+
+/* ====================== 個人設定（大頭貼） ====================== */
+let pendingPhoto = null;
+$("#meBtn").addEventListener("click", () => {
+  if (!me) return;
+  pendingPhoto = null;
+  openModal(`<h3>個人設定</h3>
+    <div class="avEdit"><div id="pAv">${avatar(me, 72)}</div>
+      <div><label class="btn sec sm" style="display:inline-block">選擇圖片<input type="file" accept="image/*" id="pFile" hidden></label>
+      <button class="btn sec sm" id="pClear">移除</button>
+      <div class="dropHint" style="margin-top:6px">也可以直接 Ctrl+V 貼上圖片</div></div></div>
+    <div class="field"><label>顯示名稱</label><input id="pName" maxlength="20" value="${esc(me.name)}"></div>
+    <div class="field"><label>每日讀書目標（分鐘）</label><input id="pGoal" type="number" min="10" max="720" value="${me.goalMin || CONFIG.defaultGoalMin}"></div>
+    <div class="dropHint">${esc(me.email)}</div>
+    <div class="mfoot"><button class="btn sec" id="pCancel">取消</button><button class="btn" id="pSave">儲存</button></div>`);
+  $("#pFile").onchange = e => e.target.files[0] && setPhoto(e.target.files[0]);
+  $("#pClear").onclick = () => { pendingPhoto = ""; $("#pAv").innerHTML = avatar({ ...me, photo: "" }, 72); };
+  $("#pCancel").onclick = closeModal;
+  $("#pSave").onclick = async () => {
+    const p = { name: $("#pName").value.trim() || me.name, goalMin: Math.min(720, Math.max(10, +$("#pGoal").value || CONFIG.defaultGoalMin)) };
+    if (pendingPhoto !== null) p.photo = pendingPhoto;
+    try {
+      await backend.updateUser(me.id, p); Object.assign(me, p);
+      const u = users.find(x => x.id === me.id); if (u) Object.assign(u, p);
+      closeModal(); renderAll(); toast("已更新");
+    } catch (e) { toast(errMsg(e), 4000); }
+  };
+});
+async function setPhoto(file) {
+  if (!file.type.startsWith("image/")) return toast("請選擇圖片檔");
+  try { pendingPhoto = await resizeImage(file); $("#pAv").innerHTML = avatar({ ...me, photo: pendingPhoto }, 72); }
+  catch (e) { toast("圖片讀取失敗"); }
+}
+document.addEventListener("paste", e => {
+  if (!$("#pAv") || $("#mask").classList.contains("hidden")) return;
+  const it = [...(e.clipboardData?.items || [])].find(i => i.type.startsWith("image/"));
+  if (it) { e.preventDefault(); setPhoto(it.getAsFile()); }
+});
+
+/* ====================== 管理者 ====================== */
+$("#adminBtn").addEventListener("click", async () => {
+  try { await loadData(); } catch (e) {}
+  renderAdmin();
+});
+function renderAdmin() {
+  const order = { pending: 0, approved: 1, rejected: 2 };
+  const list = [...users].sort((a, b) => (order[a.status] ?? 3) - (order[b.status] ?? 3) || (a.createdAt || 0) - (b.createdAt || 0));
+  const stTxt = { pending: "待核准", approved: "已啟用", rejected: "已拒絕" };
+  openModal(`<h3>帳號管理</h3>` + list.map(u => `<div class="urow">${avatar(u, 40)}
+      <div class="info"><b>${esc(u.name)}</b><span class="st ${u.status}">${stTxt[u.status] || u.status}</span>${u.role === "admin" ? `<span class="st admin">管理者</span>` : ""}
+        <small>${esc(u.email)}・${u.createdAt ? dkey(u.createdAt) : ""} 申請</small></div>
+      <div class="uact">
+        ${u.status !== "approved" ? `<button class="btn sm green" data-a="approve" data-u="${u.id}">核准</button>` : ""}
+        ${u.status !== "rejected" && u.id !== me.id ? `<button class="btn sm sec" data-a="reject" data-u="${u.id}">${u.status === "approved" ? "停用" : "拒絕"}</button>` : ""}
+        ${u.status === "approved" && u.id !== me.id ? `<button class="btn sm sec" data-a="role" data-u="${u.id}">${u.role === "admin" ? "取消管理者" : "設為管理者"}</button>` : ""}
+        ${u.id !== me.id ? `<button class="btn sm red" data-a="del" data-u="${u.id}">刪除</button>` : ""}
+      </div></div>`).join("") + `<div class="mfoot"><button class="btn sec" id="aClose">關閉</button></div>`);
+  $("#aClose").onclick = closeModal;
+  $("#modal").onclick = async e => {
+    const b = e.target.closest("[data-a]"); if (!b) return;
+    const u = users.find(x => x.id === b.dataset.u), a = b.dataset.a;
+    try {
+      if (a === "approve") await backend.updateUser(u.id, { status: "approved" });
+      if (a === "reject") await backend.updateUser(u.id, { status: "rejected" });
+      if (a === "role") await backend.updateUser(u.id, { role: u.role === "admin" ? "user" : "admin" });
+      if (a === "del") {
+        $("#modal").onclick = null;
+        if (!(await ask(`刪除 ${u.name} 的帳號？（讀書紀錄會保留，對方重新登入需再次核准）`, "刪除", true))) return renderAdmin();
+        await backend.deleteUser(u.id);
+      }
+      await loadData(); renderAll(); renderAdmin(); toast("已更新");
+    } catch (err) { toast(errMsg(err), 4000); }
+  };
+}
+
+/* ====================== 啟動 ====================== */
+$("#logoutBtn").addEventListener("click", async () => {
+  if (me?.active && !(await ask("目前還在計時中，登出後計時會繼續保留，下次登入可結束。確定登出？", "登出"))) return;
+  backend.signOut();
+});
+$("#recheckBtn").addEventListener("click", async () => {
+  const au = { uid: me.id, email: me.email, name: me.name, photo: me.photo };
+  await handleAuth(au);
+});
+
+(async function init() {
+  renderCountdown(); setInterval(renderCountdown, 60000);
+  try {
+    if (CONFIG.firebase.apiKey) {
+      backend = await makeFirebase(CONFIG.firebase);
+      $("#loginBtn").onclick = () => backend.signIn().catch(e => toast(errMsg(e), 4000));
+    } else {
+      backend = makeDemo();
+      $("#demoBar").classList.remove("hidden");
+      $("#loginBtn").classList.add("hidden");
+      $("#demoLogin").classList.remove("hidden"); $("#demoHint").classList.remove("hidden");
+      const go = () => backend.signIn($("#demoName").value);
+      $("#demoGo").onclick = go;
+      $("#demoName").addEventListener("keydown", e => e.key === "Enter" && go());
+    }
+    backend.onAuth(handleAuth);
+  } catch (e) { toast(errMsg(e), 5000); show("vLogin"); }
+})();
+</script>
+</body>
+</html>
