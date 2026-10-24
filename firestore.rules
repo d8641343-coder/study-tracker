@@ -3,7 +3,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // ⚠️ 管理者 Gmail，需與 index.html 的 CONFIG.adminEmails 一致
-    function adminEmails() { return ['your-admin@gmail.com']; }
+    function adminEmails() { return ['d8641343@gmail.com']; }
 
     function signedIn() { return request.auth != null; }
     function myDoc() { return /databases/$(database)/documents/users/$(request.auth.uid); }

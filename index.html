@@ -121,6 +121,7 @@ main{max-width:980px;margin:0 auto;padding:16px}
 .gate p{color:var(--muted)}
 .gbtn{display:inline-flex;align-items:center;gap:10px;background:var(--card);color:var(--text);border:1px solid var(--line);padding:16px 28px;font-size:18px;font-weight:600;border-radius:14px;box-shadow:var(--shadow);margin-top:12px}
 .demoLogin{max-width:320px;margin:12px auto 0;display:flex;gap:8px}
+.demoLogin .btn{white-space:nowrap;flex:none}
 /* modal */
 .mask{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:50;display:flex;align-items:center;justify-content:center;padding:16px}
 .modal{background:var(--card);border-radius:16px;width:100%;max-width:480px;max-height:90vh;overflow:auto;padding:20px}
@@ -161,10 +162,10 @@ main{max-width:980px;margin:0 auto;padding:16px}
 
   <section id="vLogin" class="gate card hidden">
     <h1>登入後開始記錄讀書時間</h1>
-    <p>使用 Google 帳號登入，首次登入需經管理者核准才能使用。</p>
+    <p>第一次用 Google 登入即完成註冊，經管理者核准後即可使用。</p>
     <button class="gbtn" id="loginBtn">
       <svg width="22" height="22" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>
-      使用 Google 帳號登入
+      使用 Google 帳號登入／註冊
     </button>
     <div class="demoLogin hidden" id="demoLogin">
       <input id="demoName" placeholder="示範模式：輸入名字">
@@ -267,7 +268,7 @@ const CONFIG = {
     projectId: "",
     appId: ""
   },
-  adminEmails: ["your-admin@gmail.com"],   // 管理者 Gmail（需和 firestore.rules 內一致）
+  adminEmails: ["d8641343@gmail.com"],   // 管理者 Gmail（需和 firestore.rules 內一致）
   examDates: ["2027-05-15", "2027-05-16"], // 會考日期
   remindDays: 2,                           // 幾天沒讀書就提醒
   defaultGoalMin: 120,                     // 預設每日目標（分鐘）

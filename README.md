@@ -18,7 +18,7 @@ adminEmails: ["你的管理者@gmail.com"],
 會考日期、提醒天數、預設每日目標也在同一區塊。
 
 ## 3. 設定 Firestore 規則
-把 `firestore.rules` 內的 `your-admin@gmail.com` 改成同一個管理者信箱，
+把 `firestore.rules` 內的 `d8641343@gmail.com` 改成同一個管理者信箱，
 貼到 **Firestore → 規則** → 發布。
 
 ## 4. 部署到 GitHub Pages
