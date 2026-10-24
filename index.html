@@ -25,7 +25,9 @@ button{font:inherit;cursor:pointer;border:0;border-radius:10px}
 input,select,textarea{font:inherit;color:var(--text);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%}
 .hidden{display:none!important}
 .top{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 16px;background:var(--card);border-bottom:1px solid var(--line)}
-.brand{font-weight:700;font-size:18px;white-space:nowrap}
+.brand{font-weight:700;font-size:18px;white-space:nowrap;display:flex;align-items:baseline;gap:6px}
+.ver{font-size:12px;font-weight:500;color:var(--muted);background:var(--chip);padding:1px 7px;border-radius:999px}
+.foot{text-align:center;color:var(--muted);font-size:12px;padding:8px 0 24px}
 .who{display:flex;align-items:center;gap:6px}
 .ghost{background:transparent;color:var(--muted);padding:8px 10px}
 .ghost:hover{background:var(--chip)}
@@ -146,7 +148,7 @@ main{max-width:980px;margin:0 auto;padding:16px}
 </head>
 <body>
 <header class="top">
-  <div class="brand">📚 會考讀書紀錄</div>
+  <div class="brand">📚 會考讀書紀錄 <span class="ver" id="ver"></span></div>
   <div class="who hidden" id="who">
     <button class="adminBtn hidden" id="adminBtn">管理<span id="pendBadge" class="badge hidden"></span></button>
     <button class="meBtn" id="meBtn" title="個人設定"><span id="meAv"></span><span id="meName"></span></button>
@@ -252,6 +254,7 @@ main{max-width:980px;margin:0 auto;padding:16px}
       <div id="records"></div>
     </section>
   </section>
+  <div class="foot" id="foot"></div>
 </main>
 
 <div class="mask hidden" id="mask"><div class="modal" id="modal"></div></div>
@@ -259,6 +262,9 @@ main{max-width:980px;margin:0 auto;padding:16px}
 
 <script type="module">
 /* ====================== 設定（部署前修改這裡） ====================== */
+const APP_VERSION = "v1.0.1";   // 版號：每次更新都要改（與 git tag 一致）
+const APP_DATE = "2026-10-24";
+
 const CONFIG = {
   // Firebase 專案設定：Firebase Console → 專案設定 → 一般 → 你的應用程式 → SDK 設定
   // apiKey 留空 = 示範模式（資料存在瀏覽器）
@@ -923,6 +929,8 @@ $("#recheckBtn").addEventListener("click", async () => {
 });
 
 (async function init() {
+  $("#ver").textContent = APP_VERSION;
+  $("#foot").textContent = `會考讀書紀錄 ${APP_VERSION}・${APP_DATE}`;
   renderCountdown(); setInterval(renderCountdown, 60000);
   try {
     if (CONFIG.firebase.apiKey) {
